@@ -1,0 +1,49 @@
+name: 'Build & Push'
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]'
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Log in to GitHub Docker Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version tag
+        id: tag
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+      - name: Tag stable by default
+        run: echo "REL_TYPE=stable" >> $GITHUB_ENV
+      - name: Tag beta if beta
+        if: contains(steps.tag.outputs.tag, 'beta')
+        run: echo "REL_TYPE=beta" >> $GITHUB_ENV
+      - name: Tag rc if rc
+        if: contains(steps.tag.outputs.tag, 'rc')
+        run: echo "REL_TYPE=rc" >> $GITHUB_ENV
+
+      - name: Build container image
+        uses: docker/build-push-action@v2
+        with:
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/uuland/nsq-prometheus-exporter:${{ env.REL_TYPE }}
+            ghcr.io/uuland/nsq-prometheus-exporter:${{ steps.tag.outputs.tag }}
