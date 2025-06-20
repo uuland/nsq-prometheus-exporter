@@ -13,6 +13,8 @@ type NsqCollector struct {
 	TopicMetrics   []*TopicMetric
 	ClientMetrics  []*ClientMetric
 	NodeMetrics    []*NodeMetric
+	ScrapeClient   bool
+	ScrapeNode     bool
 }
 
 var (
@@ -43,12 +45,16 @@ func (c *NsqCollector) Collect(ch chan<- prometheus.Metric) {
 		metric.collect(stats, ch)
 	}
 
-	for _, metric := range c.ClientMetrics {
-		metric.collect(stats, ch)
+	if c.ScrapeClient {
+		for _, metric := range c.ClientMetrics {
+			metric.collect(stats, ch)
+		}
 	}
 
-	for _, metric := range c.NodeMetrics {
-		metric.collect(stats, ch)
+	if c.ScrapeNode {
+		for _, metric := range c.NodeMetrics {
+			metric.collect(stats, ch)
+		}
 	}
 
 }
