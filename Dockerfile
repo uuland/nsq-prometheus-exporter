@@ -3,7 +3,7 @@ FROM golang:1.24-alpine as builder
 WORKDIR /workspace
 ADD . ./
 
-RUN CGO_ENABLED=0  go build -ldflags "-w -s" -i -o nsq-prometheus-exporter main.go
+RUN CGO_ENABLED=0 go build -ldflags "-w -s" -o nsq-prometheus-exporter main.go
 
 FROM scratch
 WORKDIR /workspace
